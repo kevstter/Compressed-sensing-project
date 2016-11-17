@@ -4,7 +4,7 @@ Files related to the project I did for the compressed sensing class I took durin
 
 These are separated into two categories, the write-up, and the codes. 
 
-# Write-up
+## Write-up
 Under 'Project - final version' is the write-up. This contains the pdf files and the tex document. As is, the tex document cannot be compiled. Missing are the figures and bib file.
 
 The title of the project is 'Survey of Results in Compressed Sensing using Total Variation Minimization'. A number of theoretical results are discussed and numerical experiments are conducted. Key elements covered are the use of the TV-norm (justification, results), sampling strategies (uniform, etc.), and implementation (split Bregman algorithm). 
