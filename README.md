@@ -9,5 +9,5 @@ Under 'Project - final version' is the write-up. This contains the pdf files and
 
 The title of the project is 'Survey of Results in Compressed Sensing using Total Variation Minimization'. A number of theoretical results are discussed and numerical experiments are conducted. Key elements covered are the use of the TV-norm (justification, results), sampling strategies (uniform, etc.), and implementation (split Bregman algorithm). 
 
-# Codes
+## Codes
 Under 'Project codes' are a number of Matlab codes. These were used to test mainly the stability and robustness of the recovery technique. Examples with 1D signals and images. The codes to run are stable_n_robust_1D.m and stable_n_robust_2D.m. Examples of how to call these functions are in the initial comment blurb. 
