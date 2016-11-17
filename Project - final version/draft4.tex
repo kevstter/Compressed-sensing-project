@@ -1,0 +1,828 @@
+\documentclass[11pt, oneside]{article}   % use "amsart" instead of  "article" 
+%for AMSLaTeX format; option: draft
+\usepackage{cite}
+\usepackage{url}
+\usepackage{geometry}                		% See geometry.pdf to learn the 
+%layout options. There are lots.
+\geometry{letterpaper}                   		% ... or a4paper or 
+%a5paper or ... 
+%\geometry{landscape}                		% Activate for for rotated page 
+%geometry
+%\usepackage[parfill]{parskip}    		% Activate to begin paragraphs 
+%with an empty line rather than an indent
+%\usepackage{graphicx}
+\usepackage[]{graphicx} % draft or demo to suppress images
+\usepackage{subfigure}
+\usepackage{setspace}
+ %\onehalfspacing	 % Use pdf, png, jpg, or eps§ with pdflatex; use 
+%\doublespacing
+\linespread{1.0}
+% eps in DVI mode
+% TeX will automatically convert eps --> pdf in pdflatex
+\usepackage{amssymb, amsthm, amsmath} % 
+\usepackage{amstext, amscd, amsmath}
+\usepackage[toc]{appendix}
+\usepackage{verbatim}
+\usepackage[framed,numbered,autolinebreaks,useliterate]{mcode}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+
+\DeclareMathOperator*{\supp}{supp}
+\DeclareMathOperator*{\prob}{Pr}
+\DeclareMathOperator*{\argmin}{argmin}
+\newcommand{\bC}{\mathbb{C}}
+\newcommand{\bN}{\mathbb{N}}
+\newcommand{\A}{\mathcal{A}}
+\newcommand{\B}{\mathcal{B}}
+\renewcommand{\H}{\mathcal{H}}
+\renewcommand{\L}{\mathcal{L}}
+\renewcommand{\O}{\mathcal{O}}
+\newcommand{\norm}[1]{\lVert #1 \rVert}
+\newcommand{\abs}[1]{\lvert#1 \rvert}
+
+\newcommand{\defined}{\mathrel{\mathop:}=}
+\newcommand{\definedby}{=\mathrel{\mathop:}}
+
+
+
+\title{Survey of Results in Compressed Sensing using Total Variation 
+Minimization}
+\author{Kevin Chow}
+\date{\today}		% Activate to display a given date or no date
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+\maketitle
+
+\section{Introduction}
+Applications of compressed sensing are often concerned with the recovery of 
+images from linear measurements (MRI, radar).  Some of the earliest papers in 
+this subject \cite{candes2006stable, candes2006robust} illustrate the power of 
+compressed sensing by recovering an image using only a small number of the 
+its Fourier coefficients. The paper \cite{candes2006stable} further 
+exposed the possibility of \textit{stable} and \textit{robust} recovery of 
+signals and images by suitably chosen sensing mechanisms. 
+
+A great deal of mathematical theory has since then been developed to 
+address this phenomenon. The notion of a restricted isometry property (RIP) has proven to be extremely fruitful in establishing and generalizing stable and  robust recovery results for large classes of sensing mechanisms (eg. \cite{candes2006stable, foucart2013mathematical}).
+Subgaussian random matrices, Fourier ensembles, and more general bounded orthonormal systems, are just a few examples of mechanisms that have been studied under the RIP framework. Satisfying the RIP, optimal recovery bounds are available to solutions by a quadratically constrained $\ell_1$ minimization program.
+
+In this survey, we will focus on recovery guarantees of 1D and 2D signals using \textit{total variation minimization}. 
+The guarantees are relevant to a large class of sensing mechanisms in
+both uniform and non-uniform recovery settings. We then further 
+focus on the case where measurements are taken with a subsampled Fourier 
+operator. This latter case is of great interest since it is closely related to
+the aforementioned applications in medical imaging. In fact, for this reason, despite the difficulties presented in analyzing TV minimization, efforts persist in developing recovery guarantees. Empirical studies indicate that TV regularization recovers images of a higher quality than $\ell_1$ minimization (say of the Haar wavelet coefficients) even when using the same set of measurements.
+
+Our survey will start with a brief and not so comprehensive discussion of the 
+general premise and principles of compressed sensing. Relevant notation and 
+terminology will be defined. We will then proceed to examine
+recovery results in \cite{needell2013stable, needell2013near, poon2015tv} and 
+auxiliary results from \cite{krahmer2012stable, candes2006robust}. Finally, 
+we will perform numerical experiments that illustrate stable and robust recovery 
+via TV minimization. We limit ourselves in the numerical experiments to Fourier 
+measurements and recovery by the split Bregman algorithm 
+\cite{goldstein2009split, goldsteinsplitcode}, but one should not take that to 
+be a limitation of the available theoretical results.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Basics of Compressed Sensing}
+\subsection{Introduction to the $\ell_1$-minimization problem}\label{intro to ell1}
+A central tenet of compressed sensing is that a sparse signal, $x \in \bC^N$, 
+can be recovered from a number of measurements, $m$, that is far fewer 
+than the dimension $N$. A first formulation of a typical compressed sensing 
+problem may be as follows: Suppose an unknown signal $x \in \bC^N$ is 
+$s$-sparse, i.e. \!the support of $x$ has $\lvert \supp(x) \rvert \leq s 
+\ll N$. 
+From a set of linear measurements of $x$ of the form $\{y_k = 
+\langle a_k, x \rangle \mid 1\leq k \leq m\}$, can we reconstruct $x$?
+Further writing the measurement acquisition as a linear system and adopting the 
+more realistic scenario of noisy measurements and compressibility (rather than 
+sparse $x$), it is proved in \cite{candes2006stable} that the solution 
+$x^\sharp$ to the $\ell_1$-minimization problem 
+\begin{align}
+\min_z \lVert z \rVert_1 \quad\text{subject to} \quad \norm{y - Az}_2 \leq 
+\epsilon, 
+\label{ell_1}
+\tag{$\ell_1$ min}
+\end{align}
+where $y = Ax + e$, $\norm{e}_2 \leq \epsilon$, represents noisy measurements, 
+satisfies 
+\begin{align}
+\norm{x - x^\sharp}_2 \lesssim \epsilon + \frac{\norm{x - 
+x_\mathbf{s}}_1}{\sqrt{s}}.
+\label{opt_err_bound}
+\end{align}
+This result holds as long as the sensing (or measurement) matrix has the 
+restricted isometry property (RIP) of order $\O(s)$ with sufficiently small 
+restricted isometry constants (further details can be found in, eg.
+\cite[Chapter 6]{foucart2013mathematical}). 
+
+A crucial generalization of the program \eqref{ell_1} is to allow for an additional change of basis. Signals of interest are often not sparse in the canonical basis, but is so under a suitable transformation. An additional orthonormal transformation, say $z \leftarrow Uz$, poses some additional constraints on compatible sensing mechanisms, but are otherwise well studied. The error bound \eqref{opt_err_bound} otherwise holds under the same conditions.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% NOTATION
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Notation}
+In the preceding section we have introduced notation that will be common 
+throughout this article. For $x \in \bC^N$, $x^\sharp$ will denote a minimizer 
+to a minimization problem, e.g. a minimizer to \eqref{ell_1}. When subscripted 
+with $\mathbf{s}$, $x_\mathbf{s}$ is the projection of $x$ to an index set of 
+its $s$-largest absolute entries and similarly, $x_S$ is the restriction of $x$ to indices in $S$. These conventions will be use analogously with 2D objects.  
+Furthermore, when we discuss objects in 2D (typically images), we 
+will denote as $X \in \bC^{N\times N}$, and $\norm{X}_p$ will be in 
+the sense of vector $p$-norm. That is, $\norm{X}_p^p = 
+\sum^N_{i,j=1}\abs{X_{ij}}^p$.  To explicitly distinguish between actions on 1D and 2D signals, we will use $\A$ to denote a linear operator, $\A:\bC^{N\times N} \to \bC^m$, that acts on images. For example, when taking measurements of an images we may write $y = \A X$.
+
+The character $\epsilon$ will be used exclusively as a bound on the $\ell_2$-norm of measurement noise $e$. When we say $a\lesssim b$, it indicates that there exists some constant $C$ independent of the variables involved such that $a \leq Cb$. We will also equate $\{1,\dots, N\}$ with $[N]$. 
+
+Finally, for brevity, from here on  we will use sparse and gradient sparse interchangeably. Whether we are referring to the sparsity of the signal or the sparsity of its gradient will be clear from context. Likewise we will use compressible in the same sense.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TV SEMINORM
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{TV seminorm}
+To proceed, we must now define a discrete gradient operator and the associated total 
+variation seminorm. Let $x \in \bC^N$. Defining our discrete gradient 
+operator as 
+\begin{align*}
+        \nabla: \bC^N \to \bC^{N-1}, \quad (\nabla x)_j =  x_{j+1} - x_j,
+\quad\text{for } j \in [N-1], 
+\end{align*}
+the total variation seminorm is then 
+\begin{align*}
+        \norm{x}_{TV} = \norm{\nabla x}_1
+= \sum^{N-1}_{j=1}\abs{x_{j+1} - x_j}.
+\end{align*}
+For an image $X \in \bC^{N\times N}$, we define first vertical and horizontal 
+difference operators, 
+\begin{align*}
+        D_1X: \bC^{N\times N}\to \bC^{(N-1)\times N}, \quad 
+(D_1X)_{ij} = X_{i+1, j} - X_{ij}, \\
+D_2X: \bC^{N\times N} \to C^{(N-1)\times N}, \quad
+(D_2X)_{ij} = X_{i,j+1} - X_{ij}.
+\end{align*}
+Our gradient operator is $\nabla: \bC^{N\times N}\to \bC^{N\times N\times 2}$,
+\begin{align}
+        (\nabla X)_{ij} 
+= \begin{cases} 
+          ((D_1X)_{ij}, (D_2X)_{ij}), & i,j \in [N-1],  \\
+(0, (D_2X)_{Nj}), & j \in [N], \\
+((D_1X)_{iN}, 0), & i \in [N], \\
+(0, 0), & i = j = N,
+  \end{cases}
+\label{grad2d}
+\end{align}
+and the TV seminorm is 
+\begin{align}
+        \norm{X}_{TV} 
+= \norm{\nabla X}_1 
+= \sum^N_{i,j=1}\abs{X_{ij, 1}} + \abs{X_{ij, 2}}.
+\label{aniso_tv}
+\end{align}
+The expression in \eqref{aniso_tv} is known as anisotropic TV. One may instead 
+define an isotropic TV and derive bounds similar to those presented in section 
+\ref{sec:CS with TV} (see \cite{needell2013near}). 
+We also note that this but one way to define a the gradient operators. 
+An alternative is to define them with periodic boundaries. This has the 
+advantage of commuting with the discrete Fourier operator and admits advantages 
+computationally. Results assuming periodicity of the gradient operators will 
+also be detailed in section \ref{sec:CS with TV}.
+
+Similar in spirit as to how we arrive at \eqref{ell_1}, we ask whether a 
+minimizer $X^\sharp$ to 
+\begin{align}
+        \min_{Z} \norm{Z}_{TV} \quad\text{subject to}\quad 
+\norm{y - \A X}_2 \leq \epsilon
+\label{TV_min}
+\tag{TV min}
+\end{align}
+admits a bound of a form similar to \eqref{opt_err_bound}. 
+
+Before proceeding further, we quickly address why the discussion in section \ref{intro to ell1} does not encompass \eqref{TV_min}. The difficulties lie with the discrete gradient operator, $\nabla$. It is not an orthonormal transformation and is not even invertible without restriction to eg. mean-zero images.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Compressed Sensing with TV Regularization}\label{sec:CS with TV}
+\subsection{A stable and robust uniform recovery guarantee}
+Let us open this section with a theorem from Needell and Ward 
+(\!\!\cite[Theorem 2]{needell2013stable}).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  THEOREM 1
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{theorem}\label{THM1_NW}
+        Let $X \in \bC^{N\times N}$ and $\nabla X$ the discrete gradient as 
+defined in \eqref{grad2d}. If we observed measurements $y = \A X + e$, 
+$\norm{e}_2 \leq \epsilon$, and the measurement operator $\A$ satisfies the RIP of 
+order $s$, then the minimizer $X^\sharp$ to 
+\begin{align}
+        \min_Z \norm{Z}_{TV} \quad\text{subject to}\quad 
+\norm{y - \A Z}_2 \leq \epsilon 
+\end{align}
+satisfies
+\begin{align}
+        \norm{X - X^\sharp}_2 
+\lesssim \log\left(\frac{N^2}{s}\right) \left(\epsilon + \frac{\norm{\nabla X - 
+(\nabla X)_\mathbf{s}}_1}{\sqrt{s}} \right).
+\label{NW_err_bound}
+\end{align}
+\end{theorem}
+Within the same paper \cite[Theorem 5]{needell2013stable}, the authors give a 
+slightly broader result that implies Theorem \ref{THM1_NW} by establishing ancillary results
+\begin{align}   
+        \norm{\nabla X - \nabla X^\sharp}_2 \lesssim 
+\epsilon + \frac{\norm{\nabla X - (\nabla X)_\mathbf{s}}_1}{\sqrt{s}},  
+ \label{opt_grad_reco}   \\
+	\norm{X - X^\sharp}_{TV} \lesssim \sqrt{s}\epsilon + \norm{\nabla X - 
+(\nabla X)_\mathbf{s}}_1. 
+\label{TV_bound}
+\end{align}
+
+This is one of the first established results on stable and robust recovery 
+by TV minimization. To fully comprehend the result of Theorem \ref{THM1_NW}, and specifically the bound \eqref{NW_err_bound} , we first examine 
+the bound \eqref{opt_err_bound}.
+
+In \eqref{opt_err_bound}, we see that the error of the reconstruction is 
+proportional to the noise level, $\epsilon$, and is likewise comparable to if we had known and selected $s$ largest absolute entries of the signal as the reconstruction. In fact, 
+as argued in \cite{candes2006robust}, one cannot hope to do better with 
+$\O(s\log N)$ measurements; an error bound of this form is optimal (see, 
+eg. \cite[Chapters 4,11]{foucart2013mathematical}). Note also when the signal is $s$-sparse, exact reconstruction with noiseless measurements is implied.
+
+The preceding remarks imply \eqref{NW_err_bound} is near optimal, and 
+improvement is possible only by reducing the log factor. To see this, note that 
+\eqref{opt_grad_reco} implies stable and robust gradient recovery, and that 
+the error bound on this process is optimal. Now if we were able to improve on 
+\eqref{NW_err_bound} (absent the log factor), then we would contradict the 
+optimality of \eqref{opt_grad_reco} since $\norm{\nabla X - \nabla X^\sharp}_2 \lesssim 
+\norm{X - X^\sharp}_2$. For simplicity, we justify the last claim by proving an analogous result for signals in $\bC^N$.
+
+Let $x, x^\sharp \in \bC^N$ and set $v = x - x^\sharp$. Then 
+\begin{align*}
+        \norm{\nabla v}_2 
+= \norm{(v_{j+1}-z_j)_{j=1}^{N-1}}_2 
+\leq \norm{(v_{j+1})^{N-1}_{j=1}}_2 + \norm{(v_j)^{N-1}_{j=1}}_2 
+\lesssim \norm{v}_2.
+\end{align*}
+
+The proof of Theorem \ref{THM1_NW}  requires two main ingredients.  The first step is to establish a tube constraint and a cone constraint satisfied by the difference 
+$\nabla X - \nabla X^\sharp$. Provided these constraints are met, 
+\eqref{opt_grad_reco} and \eqref{TV_bound} is derived. The second ingredient is what Needell and Ward call their \textit{strong Sobolev inequality} (\!\!\cite[Theorem 9]{needell2013stable}), which is a bound of the form 
+\begin{align}
+        \norm{X - X^\sharp}_2 
+\lesssim \epsilon + \log\left(\frac{N^2}{s}\right) \frac{\norm{X - 
+X^\sharp}_{TV}}{\sqrt{s}}.
+\label{strong_sobolev} 
+\end{align}
+This, when combined with \eqref{TV_bound}, gives stable and robust signal 
+recovery. In other words, we first show under suitable conditions, establishing stable and robust gradient recovery can then imply stable and robust signal recovery.
+
+The next proposition is the key to the first ingredient (\!\!\cite[Proposition 3]{needell2013stable}: 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PROPOSITION CONE AND TUBE CONSTRAINT
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{proposition}
+        Fix parameters $\gamma \geq 1$ and $\delta < 1/3$. Suppose $\B$ satisfies the RIP of order $5s\gamma^2$ and level $\delta$, and suppose that the image $V$ satisfies a tube constraint 
+\begin{align*}
+\norm{\B V}_2 \lesssim \epsilon.
+\end{align*}
+Suppose further that for a subset $S$, $\abs{S} \leq s$, $V$ satisfies the cone constraint 
+\begin{align*}
+        \norm{V_{S^c}}_1 \leq \gamma \norm{V_S}_1 + \beta.
+\end{align*}
+Then 
+\begin{align*}
+        \norm{V}_2 \lesssim \epsilon + \frac{\beta}{\gamma\sqrt{s}},
+\end{align*}
+and 
+\begin{align*}
+        \norm{V}_1 \lesssim  \gamma\sqrt{s} \epsilon + \beta.
+\end{align*}
+\end{proposition}
+
+We can see that the last two inequalities are exactly \eqref{opt_grad_reco}, \eqref{TV_bound} with $\nabla(X-X^\sharp)$ in place of $V$, $\norm{\nabla X - (\nabla X^\sharp)_\mathbf{s}}_1$ in place of $\beta$ and $\gamma = 1$. Showing that $\nabla(X - X^\sharp)$ satisfies the tube constraint requires the more tedious set up of the multi-component linear operator of Theorem 5 in \cite{needell2013stable} which we will avoid here. The cone constraint follows from 
+\begin{align*}
+        \norm{(\nabla X)_S}_1 &+ \norm{ V_{S^c}}_1 \\
+&\leq \norm{(\nabla X)_S - V_S}_1 + \norm{V_S}_1
++ \norm{(\nabla X)_{S^c} - V_{S^c}}_1 + \norm{(\nabla X)_{S^c}}_1  \\
+&= \norm{\nabla X - V}_1 + \norm{(\nabla X)_{S^c}}_1 + \norm{V_S}_1  \\
+&= \norm{\nabla X^\sharp}_1 + \norm{(\nabla X)_{S^c}}_1 + \norm{V_S}_1 \\
+&\leq \norm{\nabla X}_1 + \norm{(\nabla X)_{S^c}}_1 + \norm{V_S}_1,
+\end{align*}
+where we've used $V = \nabla X - \nabla X^\sharp$ and the fact that $X, X^\sharp$ are feasible.  The last step is to rearrange and identify $S$ with an index set containing $s$ largest absolute coefficients of $\nabla X$.
+
+The second ingredient is the strong Sobolev inequality \eqref{strong_sobolev}. The derivation of this  is nontrivial. Comparing with the classical discrete Poincar\'{e} (for mean-zero images, $\norm{X}_2 \leq \norm{X}_{TV}$), we are asking in \eqref{strong_sobolev} for a significantly 
+stronger bound (to hold for most $s < N$). This is facilitated with a heavy 
+dose of the bivariate Haar transform. Specifically, one makes use of the fact 
+that the decay rate of its $k$the largest absolute bivariate Haar coefficients 
+of a mean-zero image $X$ is at least $C\norm{X}_{TV}/k$. The precise statement is the content of the next proposition (\!\!\cite[Proposition 8]{needell2013stable}). 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PROPOSITION HAAR WAVELET DECAY
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{proposition}
+        Suppose $X \in \bC^{N\times N}$ is mean-zero and let $c_{(k)}(X)$ be the bivariate Haar coefficient of $X$ have $k$the largest magnitude. Then for all $k\geq 1$, 
+\begin{align*}
+        \abs{c_{(k)}(X)} \lesssim \frac{\norm{X}_{TV}}{k}.
+\end{align*}
+\end{proposition}
+ 
+The derivation of the strong Sobolev inequality is then the content of Theorem 9 of \cite{needell2013stable}. We include it here for completeness.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% STRONG SOBOLEV INEQUALITY
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{lemma}
+        Let $\B: \bC^{N\times N} \to \bC^m$ be a linear map such that $\B \H^{-1}$ has the RIP of order $2s+1$ and level $\delta < 1$, where $\H: \bC^{N\times N} \to \bC^{N\times N}$ is the bivariate Haar transformation. If $V \in \bC^{N\times N}$ satisfies $\norm{\B V}_2 \leq \epsilon$, then 
+\begin{align*}
+        \norm{V}_2 \lesssim \epsilon + \log\left(\frac{N^2}{s}\right) \frac{\norm{V}_{TV}}{\sqrt{s}}.
+\end{align*}
+\end{lemma}
+
+The final step is simply to combine \eqref{TV_bound} with the strong Sobolev inequality applied to $X - X^\sharp$:
+\begin{align*}
+        \norm{X - X^\sharp}_2 
+&\lesssim \epsilon + \log\left(\frac{N^2}{s}\right) \frac{\norm{ X- X^\sharp}_{TV}}{\sqrt{s}} \\
+&\lesssim \epsilon + \log\left(\frac{N^2}{s}\right) \frac{\sqrt{s}\epsilon + \norm{\nabla X - (\nabla X)_\mathbf{s}}_1}{\sqrt{s}} \\ 
+&\lesssim \epsilon + \log\left(\frac{N^2}{s}\right) \frac{\norm{\nabla X - (\nabla X)_\mathbf{s}}_1}{\sqrt{s}},
+\end{align*}
+as long as appropriate RIP conditions are satisfied.
+
+We remark that the derivation and the form of \eqref{strong_sobolev} suggests that the log factor, $\log(N^2/s)$, is but an artifact of the proof technique. This is 
+conjectured by Needell and Ward and we will seek verification of this claim in our 
+numerical experiments. 
+
+A secondary result in their paper (\!\!\cite[Theorem 6]{needell2013stable}) removes the extra log factor in the error bound. However, this comes at a cost of requiring the sensing matrix to have the RIP of order $\O(s\log^3N)$. To our knowledge, these are to date, the best proven results.
+
+We stress here that while the results of Theorem \ref{THM1_NW} is formulated 
+for signals $X \in \bC^{N\times N}$, an extension to signals $X \in \bC^{N^d}$, 
+$d \geq 2$, has been made by Needell and Ward in \cite{needell2013near}. The proof strategy is of the same flavor as in the 2D case. The arguments follow the 
+same structure as outlined above, but does require some work to generalize each 
+step to hold in higher dimensions.    We would recommend the interested reader 
+to follow carefully the arguments laid out in \cite{needell2013stable} before 
+moving to the higher dimensional case.
+
+\subsection{Stable and robust recovery from Fourier measurements}
+The next result that we will examine is from a paper by Poon \cite{poon2015tv}. 
+It is a highly specialized in the sense that a subsampled 
+Fourier operator is the only sensing mechanism that we consider. 
+Below we state her main result that applies to 1D signals (\!\!\cite[Theorem 
+2.1]{poon2015tv}):
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% THEOREM 2
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{theorem}\label{THM2_POON}
+        For $N \in 2^J$, $J \in \bN$, let $F$ be the discrete Fourier transform 
+and let $\nabla_p$ be the discrete gradient operator with periodic boundary, 
+i.e. 
+\begin{align*}
+        \nabla_p: \bC^N \to \bC^n, 
+\quad (\nabla_p z)_j = \begin{cases} 
+                               z_{j+1} - z_j, &j \in [N-1], \\
+				z_1 - z_{N-1}, &j = N.
+                       \end{cases}
+\end{align*}
+Let $\delta \in (0, 1)$ and let $S \subseteq [N]$, $\abs{S} = s$. Let $x \in 
+\bC^N$. Let $\Omega_1, \Omega_2 \subseteq \{-N/2+1, \dots, N/2\}$ be such that 
+$\abs{\Omega_1} = \abs{\Omega_2} = m$ with $m \gtrsim s\log(N)(1 + 
+\log(\delta^{-1}))$.
+
+Let $\Omega_1$ be chosen uniformly at random and let $\Omega_2 = \{\omega_1, 
+\dots, \omega_m\}$ have indices chosen i.i.d. according to the distribution 
+\begin{align*}
+        \prob(\omega_k = n) = p(n), 
+\quad\text{where}\quad
+p(n) = \frac{C}{\log(N) \max\{1, \abs{n}\}}, 
+\quad 
+n = -N/2+1,\dots, N/2,
+\end{align*}
+and $C$ is chosen so that $\sum p(n) = 1$. Let $\Omega = \Omega_1 \cup 
+\Omega_2$, and suppose $y =  P_\Omega Fx + e$, $\norm{e}_2 \leq 
+\sqrt{m}\epsilon$. 
+
+If $x^\sharp$ is a minimizer of 
+\begin{align*}
+        \min_z \norm{z}_{TV, p} \quad\text{subject to}\quad
+\norm{y - P_\Omega Fz}_2 \leq \epsilon\sqrt{m}, 
+\end{align*}
+then with probability at least $1 - \delta$,
+\begin{align}
+        \norm{\nabla x - \nabla x^\sharp}_2
+\lesssim \epsilon\sqrt{s} + \L_2\frac{\norm{\nabla x - (\nabla 
+x)_\mathbf{s}}_1}{\sqrt{s}},
+\quad 
+\frac{\norm{x - x^\sharp}_2}{\sqrt{N}} 
+\lesssim \L_1\left(\frac{\epsilon}{\sqrt{s}}
+ + \L_2 \frac{\norm{\nabla x - (\nabla x)_\mathbf{s}}}{s}
+\right),
+\label{poon_err_bound}
+\end{align}
+where $\L_1 = \log^2(s)\log(N)\log(m)$ and $\L_2 = \log(s)\log^{1/2}(m)$.
+\end{theorem}
+(The seminorm $\norm{\,\cdot\,}_{TV, p}$ above comes from using the discrete gradient operator $\nabla_p$, i.e. $\norm{z}_{TV,p} = \norm{\nabla_p z}_1$. The operator $P_\Omega$ is a restriction operator that projects onto the entries indexed by $\Omega$.)
+
+The optimality of \eqref{poon_err_bound} is argued in the succeeding remark in 
+the paper and will not be repeated here. In short, the bound is 
+optimal up to log factors. 
+
+Now to get to the heart of this result. Again, it is stable and robust recovery by TV minimization. However, there notable key differences in the hypotheses of Theorem \ref{THM2_POON} and Theorem \ref{THM1_NW}. Theorem \ref{THM1_NW} is a uniform recovery result and applies to sensing matrices that satisfies the RIP of order $\O(s)$. In Theorem \ref{THM2_POON}, the sensing mechanism is a subsampled Fourier operator. Moreover, the sampling is not of the uniform variety. Theorem \ref{THM2_POON} uses a variable density sampling scheme in drawing the indices for $\Omega$.  The probability density $p$ adopted in Theorem \ref{THM2_POON} was analyzed in \cite{krahmer2012stable} in conjunction with the partial Fourier operator. It was showed there (although under a nonstandard noise model) that this sampling scheme allows the use of the Fourier operator in combination with the Haar wavelet transform despite the coherence between the two bases. 
+
+Interestingly, in the same publication \cite{poon2015tv}, Poon derives a weaker result 
+when using purely uniform random sampling (otherwise with conditions identical to Theorem \ref{THM2_POON}). Ignoring log factors, the error bound on the signal recovery, $\norm{x - x^\sharp}_2$, is greater by a factor of $s$ (\!\!\cite[Theorem 2.3]{poon2015tv}). It is further conjectured that this is a fundamental limit on uniform sampling patterns, i.e. uniform sampling is inherently inferior to the variable sampling strategy given in Theorem \ref{THM2_POON}. 
+
+For further details and an analogous 2D result to Theorem \ref{THM2_POON}, the interested reader may refer to \cite[Theorem 2.2]{poon2015tv} and other content within the same publication. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Numerical Experiments}
+Below we will present a collection of numerical examples. All examples in this 
+section perform the recovery process by solving \eqref{TV_min} (or the analogous 1D formulation) with the split Bregman algorithm \cite{goldstein2009split}. See also Appendix \ref{sb append} for a quick and easy introduction to the algorithm.
+
+\subsection{1D Experiments}
+In this section, we will consider reconstruction of signals $x \in \bC^N$.  For all experiments here, $N = 1024$ will be the signal length, the (gradient) sparsity 
+will be $s = 20$, and the reconstruction done with $m$ samples, where $m$ is 
+such that $m/N \approx 0.14$. To further describe our procedure, we turn 
+to our first example. Codes used in our numerical experiments are provided in Appendix \ref{Codes}.
+
+\subsubsection{Example 1} 
+In our first example, we construct a gradient sparse signal and add to it  
+i.i.d mean-zero Gaussian noise with standard deviation $\sigma_1 = 1/5$. We 
+then take measurements with a subsampled Fourier operator and added to the 
+measurements i.i.d mean-zero Gaussian noise with  standard deviation $\sigma_2 
+= 1/20$. The command
+
+\begin{lstlisting}
+N = 1024;stable_n_robust_1d(N, round(N/50), 140/N, 'uniform',1e-3,'noise',1*5,0.05,'global', 8)
+\end{lstlisting}
+in \textsc{Matlab} produces the plots in Figure \ref{ex1}.
+
+\begin{figure}
+        \centering
+\includegraphics[width = .98\textwidth]{ex1}
+\caption{Reconstruction of the 1D signal (top left) using $13.4\%$ of its Fourier coefficients. The coefficients have been chosen uniformly at random (third plot, second column) and is corrupted by noise (third plot, first column). The reconstructed signal (shown top right) has a relative error of $0.368$. }
+\label{ex1}
+\end{figure}
+
+To generate the plots in Figure \ref{ex1}, we must specify parameters such as noise level ($\sigma_1$, $\sigma_2$), signal length (even), sparsity level, sampling ratio, as well as the sampling strategy that determines the restriction operator $P_\Omega$.  Here, we have sampled uniformly the Fourier data of the signal (top left plot of Figure \ref{ex1}). The sampling map is provided in the third plot of the second column. Note the sampling ratio. Our procedure allows each frequency to be sampled with probability $0.14$, so each instance will produce a difference value.
+
+Figure \ref{ex1} is but our first demonstration of recovery by TV. Next, we will examine more broadly aspects of 1D signal recovery by TV minimization under four different sampling strategies.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% SAMPLING STRATEGIES
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Sampling strategies}\label{sampling strategies}
+The quality of the recovery using four different sampling strategies will be compared.
+\begin{enumerate}
+        \item Uniform random sampling: This is the most common (but certainly not the best) sampling strategy studied in the compressed sensing literature. The sampling set, which we denote $\Omega_U$, is selected via the probability distribution 
+\begin{align*}
+        \prob(k \in \Omega_U) = \frac{m}{N}, \quad \text{for }k = -\frac{N}{2}+1, \dots, \frac{N}{2}.
+\end{align*}
+
+\item Low frequency sampling: This is the most straightforward. We simply sample the frequency $k$ whenever $-m/2 \leq k \leq m/2-1$, and disregard frequencies outside this range. We denote this sampling set $\Omega_L$.
+
+
+\item Uniform and power decay density sampling:  This is the strategy in the statement of Theorem \ref{THM2_POON}. When we say power decay density, we are referring to the probability density $p$ is the theorem. We get resp. $m_1$ and $m_2$ samples accordingly and form the sample set $\Omega_H$. This we will refer to as our hybrid sampling strategy.
+
+\item Power decay density sampling: Again, power decay density refers to the probability distribution in Theorem \ref{THM2_POON}. We will investigate whether combination with a uniform sampling set is necessary, or whether it may be an artifact of the proof provided in \cite{poon2015tv}, which uses the uniform sampling set to establish stable gradient recovery. We will refer to this strategy as power density sampling and denote the sampling set as $\Omega_P$.
+\end{enumerate}
+We also stipulate that in each strategy we sample the zero frequency.
+ 
+Figure \ref{sampling maps} shows a representative sampling map from each of the four sampling strategies. 
+\begin{figure}
+        \centering
+\begin{minipage}{.45\textwidth}
+     \includegraphics[width = 0.95\textwidth]{omegau2}
+\end{minipage}
+\begin{minipage}{.45\textwidth}
+      \includegraphics[width = 0.95\textwidth]{omegal2}
+\end{minipage}
+\begin{minipage}{.45\textwidth}
+     \includegraphics[width = 0.95\textwidth]{omegap2}
+\end{minipage}
+\begin{minipage}{.45\textwidth}
+      \includegraphics[width = 0.95\textwidth]{omegah2}
+\end{minipage}
+\caption{Sampling maps of the four sampling strategies. Each map was constructed with the target ratio $m/N \approx 0.10$. Dense sampling near the zero frequency is seen in $\Omega_L$, $\Omega_P$ and $\Omega_H$. Note also that $\Omega_H$ samples more evenly through the medium and high frequencies than $\Omega_P$.}
+\label{sampling maps}
+\end{figure}
+
+\subsubsection{Example 2}
+The results of this example are summarized in Table \ref{1d summary}. We show two measures of error. The first is a direct comparison with the signal $x$. The second computes a gradient error. Let $x'$ be the reconstructed signal. The quantities l2error and $\mathrm{l2}\nabla\mathrm{error}$ are then defined as 
+\begin{align*}
+        \mathrm{l2error} \defined \frac{\norm{x - x'}_2}{\norm{x}_2}, 
+\quad 
+\mathrm{l2}\nabla\mathrm{error} \defined \frac{\norm{\nabla x - \nabla x'}_2}{\norm{\nabla x}_2}.
+\end{align*}
+For each sampling strategy, we run 200 experiments. Each experiments constructs a gradient sparse signal (similar to bottom right of Figure \ref{ex1}), samples, and reconstructs. The signal is sparse and no noise is added to the measurements.
+
+\begin{table}
+        \centering
+\begin{tabular}{c|ccc}
+        & Average number of samples & l2error ($\times 10^{-3}$) & $\mathrm{l2}\nabla\mathrm{error}$ ($\times 10^{-3}$) \\ \hline
+$\Omega_L$ & 140 & 77.0 & 518 \\
+$\Omega_U$ & 141& 9.6 & 5.5\\
+$\Omega_H$ & 139 & 8.7 & 19.9 \\ 
+$\Omega_P$ & 140 & 7.1 & 26.5
+\end{tabular}
+\caption{Reconstruction of a gradient sparse signal.}
+\label{1d summary}
+\end{table}
+
+The results in Table \ref{ex1} say that capturing only the low frequencies is the weakest strategy. Losing all high frequency information hinders gradient and signal recovery. Comparison between the power density sampling and hybrid sampling shows a trade off between capturing fewer high frequency modes for more low frequency modes. The signal error is slightly reduced at the cost of an increase in the gradient error.
+
+A natural followup then is to test with a compressible rather than sparse signal. This we do by repeating the above experiment with an additional step where random Gaussian noise (with standard deviation $\sigma_2 = 1/4$) is added to a sparse signal. A summary of the errors is in Table \ref{1d compressible summary}. Signal recovery by uniform sampling is now the worse by our error measure, whereas the error with low frequency sampling stayed relatively constant. However, in this scenario, we find power decay sampling to be the best in both signal recovery and gradient recovery. This indicates that sampling densely the low frequencies improves stability of the reconstruction.
+\begin{table}
+	\centering
+\begin{tabular}{c|ccc}
+        & Average number of samples & l2error ($\times 10^{-3}$) & $\mathrm{l2}\nabla\mathrm{error}$ ($\times 10^{-3}$) \\ \hline
+$\Omega_U$ & 141& 367 & 275\\
+$\Omega_H$ & 139 & 107 & 240 \\
+$\Omega_L$ & 140 & 81.9 & 478 \\ 
+$\Omega_P$ & 140 & 66.4 & 225
+\end{tabular}
+\caption{Reconstruction of a compressible signal.}
+\label{1d compressible summary}
+\end{table}
+
+For our last test of this section, we reconstruct gradient sparse signals from noisy measurements. Random Gaussian noise with $\sigma_1 = 5$ is added to the Fourier samples. The results in Table \ref{1d noise summary} now suggest complete low frequency sampling is the best. However, this is not entirely unexpected since the additional of noise disproportionately affects the higher frequencies. In other words, the high frequency modes are excited by the additional of noise, thus causing spurious oscillations. Dense sampling of the low frequencies circumvents this problem.
+
+\begin{table}
+        \centering
+\begin{tabular}{c|ccc}
+        & Average number of samples & l2error ($\times 10^{-2}$) & $\mathrm{l2}\nabla\mathrm{error}$ ($\times 10^{-2}$) \\ \hline
+$\Omega_U$ & 140& 370 & 299\\
+$\Omega_H$ & 140 & 96.6 & 249 \\ 
+$\Omega_P$ & 140 & 57.2 & 205 \\
+$\Omega_L$ & 140 & 29.6 & 116 
+\end{tabular}
+\caption{Reconstruction of a gradient sparse signal from noisy measurements.}
+\label{1d noise summary}
+\end{table}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 2D EXPERIMENTS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{2D Experiment}
+In this section, experimentation will be with images under analogous sampling strategies outlined in Section \ref{sampling strategies}. For concreteness, we presented representative sampling maps in Figure \ref{sampling maps 2}.
+
+\begin{figure}
+        \centering
+\begin{minipage}{.45\textwidth}
+     \includegraphics[width = 0.95\textwidth]{omegau3}
+\end{minipage}
+\begin{minipage}{.45\textwidth}
+      \includegraphics[width = 0.95\textwidth]{omegal3}
+\end{minipage}
+\begin{minipage}{.45\textwidth}
+     \includegraphics[width = 0.95\textwidth]{omegap3}
+\end{minipage}
+\begin{minipage}{.45\textwidth}
+      \includegraphics[width = 0.95\textwidth]{omegah3}
+\end{minipage}
+\caption{Sampling maps of the four sampling strategies. Each map was constructed with the target ratio $m/N^2 \approx 0.10$, where $N$ now represents the number of pixels in the horizontal and vertical dimension. Dense sampling near the zero frequency is seen in strategies $\Omega_L$, $\Omega_P$ and $\Omega_H$. }
+\label{sampling maps 2}
+\end{figure}
+
+\subsection{Example 3}
+We are now set to test reconstruction of images using the four sampling strategies: uniform, low frequency, hybrid, and power density sampling. In Figures \ref{camerau} and \ref{camerah}, are reconstructions using uniform sampling and the hybrid sampling, resp. Note that we have chosen not to show the results from low frequency and power density sampling because they are nearly indistinguishable from hybrid sampling (fine features are blurred slightly with low frequency sampling). In Table \ref{2d ex1}, the l2error from Example 2 is computed and summarized. The results show that power density sampling outperforms the other strategies under consideration.
+\begin{table}[htb!]
+        \centering
+\begin{tabular}{c|cccc}
+$m/N^2$ & $\Omega_U$ & $\Omega_L$ & $\Omega_H$ & $\Omega_P$ \\ \hline
+$0.1$ & $0.202$ & $0.028$ & $0.024$ & $0.019$ \\
+$0.2$ & $0.118$ & $0.022$ & $0.013$ & $0.012$\\
+$0.3$ & $0.049$     & $0.019$ & $ 0.009$ & $0.008$
+\end{tabular}
+\caption{Errors in image reconstruction. Each strategy sees a decrease in error when increasing the sampling ratio.  At moderate sampling ratios, the performance of $\Omega_H$, $\Omega_P$ are equal.}
+\label{2d ex1}
+\end{table}
+
+\begin{figure}[htb!]
+        \centering 
+\begin{minipage}{.32\textwidth}
+     \includegraphics[width = 0.99\textwidth]{camerau10}
+\end{minipage}
+\begin{minipage}{.32\textwidth}
+      \includegraphics[width = 0.99\textwidth]{camerau20}
+\end{minipage}
+\begin{minipage}{.32\textwidth}
+      \includegraphics[width = 0.99\textwidth]{camerau30}
+\end{minipage}
+\caption{Image reconstruction from uniform random samples. Sampling ratios (from left to right): $0.10$, $0.20$, $0.30$. Blurring and other visual artifacts are visible in each reconstruction.}
+\label{camerau}
+\end{figure}
+\begin{comment}
+\begin{figure}
+        \centering 
+\begin{minipage}{.32\textwidth}
+     \includegraphics[width = 0.99\textwidth]{cameral10}
+\end{minipage}
+\begin{minipage}{.32\textwidth}
+      \includegraphics[width = 0.99\textwidth]{cameral20}
+\end{minipage}
+\begin{minipage}{.32\textwidth}
+      \includegraphics[width = 0.99\textwidth]{cameral30}
+\end{minipage}
+\caption{Image reconstruction from only low frequency samples. Sampling ratios (from left to right): $0.10$, $0.20$, $0.30$.}
+\label{cameral}
+\end{figure}
+\end{comment}
+\begin{figure}[htb!]
+        \centering 
+\begin{minipage}{.32\textwidth}
+     \includegraphics[width = 0.99\textwidth]{camerah10}
+\end{minipage}
+\begin{minipage}{.32\textwidth}
+      \includegraphics[width = 0.99\textwidth]{camerah20}
+\end{minipage}
+\begin{minipage}{.32\textwidth}
+      \includegraphics[width = 0.99\textwidth]{camerah30}
+\end{minipage}
+\caption{Image reconstruction from the hybrid sampling. Sampling ratios (from left to right): $0.10$, $0.20$, $0.30$. Image quality is vastly superior to those in Figure \ref{camerau}.}
+\label{camerah}
+\end{figure}
+\begin{comment}
+\begin{figure}
+        \centering 
+\begin{minipage}{.32\textwidth}
+     \includegraphics[width = 0.99\textwidth]{camerap10}
+\end{minipage}
+\begin{minipage}{.32\textwidth}
+      \includegraphics[width = 0.99\textwidth]{camerap20}
+\end{minipage}
+\begin{minipage}{.32\textwidth}
+      \includegraphics[width = 0.99\textwidth]{camerap30}
+\end{minipage}
+\caption{Image reconstruction from power density sampling. Sampling ratios (from left to right): $0.10$, $0.20$, $0.30$.}
+\label{camerap}
+\end{figure}
+\end{comment}
+
+
+\begin{comment}
+ In 1D, we will construct, sample, and recover from vectors that are 
+(approximately) gradient sparse. [[The plan is to perform a battery of tests 
+that illustrate stable and robust recovery of gradient sparse signals.]]
+
+[[In 2D, we reconstruct images, while doing some simple experimentation with 
+different (non-uniform) sampling strategies as outlined in \cite{poon2015tv}.]]
+
+
+\begin{figure}
+        \centering
+\begin{minipage}{.45\textwidth}
+     \includegraphics[width = 0.95\textwidth]{grad_sparse}
+\end{minipage}
+\begin{minipage}{.45\textwidth}
+      \includegraphics[width = 0.95\textwidth]{cmpct_grad_sparse}
+\end{minipage}
+\caption{Some 1D gradient sparse signals}
+\end{figure}
+\begin{figure}
+        \centering
+\begin{minipage}{.30\textwidth}
+     \includegraphics[width = 0.99\textwidth]{lena_gray}
+\end{minipage}
+\begin{minipage}{.30\textwidth}
+      \includegraphics[width = 0.99\textwidth]{lena_gray_unifF20}
+\end{minipage}
+\begin{minipage}{.30\textwidth}
+      \includegraphics[width = 0.99\textwidth]{lena_gray_full_lowF20}
+\end{minipage}
+\caption{Reconstruction of an image with 20\% of its noise-free Fourier 
+measurements. On the left is the original image. In the middle, the 
+measurements are taken uniformly at random. On the right, we densely sampled at 
+low frequencies and }
+\end{figure}
+
+\begin{figure}
+        \centering
+\begin{minipage}{.30\textwidth}
+      \includegraphics[width = 0.99\textwidth]{lena_vgrad}
+\end{minipage}
+\begin{minipage}{.30\textwidth}
+      \includegraphics[width = 0.99\textwidth]{lena_hgrad}
+\end{minipage}
+\caption{Discrete gradients of the ``Lena'' image. The left and right are 
+``images'' from applying the vertical and horizontal difference operators, 
+resp.}
+\end{figure}
+\end{comment}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Conclusion}
+Our survey examined some current results in compressed sensing by 
+total variation minimization. Of particular interest was the role this 
+regularizer plays in image processing applications in the compressed sensing 
+setting, and why we can expect reasonable image reconstruction.  We examined the claim made in \cite{poon2015tv} that we get improved stability by dense sampling of the low frequencies and found that it is indeed the case. Moreover, our testing suggests that combining power density sampling with uniform sampling as in Theorem \ref{THM2_POON} is unnecessary, and that uniform sampling was only in place to facilitate the proof.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{appendices}
+\section{The Split Bregman Algorithm}\label{sb append}
+We give here an brief description of the split Bregman algorithm. For simplicity, we will outline the details for signals in 1D. For details in 2D, we refer to reader to Section 4.2 of \cite{goldstein2009split}.
+
+The split Bregman algorithm is a method for finding solutions to certain classes of $\ell_1$-minimization problems. In this survey, the minimization problem of interest is of the form 
+\begin{align}
+	\min_z \norm{\nabla z}_1 \quad\text{such that} \quad \norm{y - P_\Omega Fz}_2 \leq \epsilon,
+	\label{sb1}
+\end{align}
+where $P_\Omega$ is the restriction operator that projects onto the indices in $\Omega$, $F$ is the Fourier operator, and $\nabla \equiv \nabla_p$, as defined in Theorem \ref{THM2_POON}.
+
+First, the problem \eqref{sb1} is reformulated as a sequence of unconstrained problems, 
+\begin{align}
+z^{k+1} &= \argmin_z \norm{\nabla z}_1 + \frac{\mu}{2} \norm{y^k - P_\Omega Fz}_2^2, \label{sb2}
+\\
+y^{k+1} &= y^k + y - P_\Omega F z^{k+1}. \label{sb3}
+\end{align}
+Note the introduction of a parameter $\mu$. Next, we rewrite the minimization problem in \eqref{sb2} to fit the split Bregman framework. This requires the introduction of the variable $d \sim \nabla z$ and a Bregman parameter $b$. This gives 
+\begin{align*}
+\min_{z, d} \norm{d}_1 + \frac{\mu}{2}\norm{y - P_\Omega Fz}_2^2 + \frac{\lambda}{2}\norm{d - \nabla z - b}^2_2.
+\end{align*}
+This last expression is now suitable for decomposition into subproblems using the split Bregman algorithm. The resulting subproblems are 
+\begin{align*}
+z^{k+1} &= \argmin_z \frac{\mu}{2}\norm{y^{ k} - P_\Omega F z}_2^2 + \frac{\lambda}{2} \norm{ d^k - \nabla z^k - b^k}^2_2 \\
+d^{k+1} &= shrink(\nabla z^k + b^k, 1/\lambda), 
+\end{align*}
+where the shrinkage operator is defined as 
+\begin{align*}
+shrink(x, \alpha) = \frac{x}{\norm{x}_1}\max(\norm{x}_1 - \alpha, 0).
+\end{align*}
+The first subproblem can be shown to be equivalent to solving 
+\begin{align}
+Cz^{k+1} \defined (\mu F^TP_\Omega^T P_\Omega F - \lambda \triangle + \gamma I) z^{k+1} 
+= \mu F^T P_\Omega^T y^{k}  + \lambda \nabla^T(d^k - b^k) \definedby rhs^k, 
+\label{sb_sys}
+\end{align}
+where $\triangle$ represents a discrete Laplacian operator.
+Herein lies one of the key efficiencies of the split Bregman. Due to the splitting of the $\ell_2$ and $\ell_1$ quantities into separate subproblems, the first is differentiable and admits a solution that can be solved for efficiently. The system to be inverted on the left-hand side of \eqref{sb_sys} is independent of $k$, and is circulant and thus diagonalized by the DFT. The second subproblem is a routine calculation. 
+
+Adding in updates of the Bregman parameter $b$ and the quantity $y^{k}$, we have the following algorithm:
+\begin{align*}
+&\texttt{Inputs: } z^0 = F^T y, y^0 = y, d^0 = b^0 = 0. \\
+&\texttt{While } \norm{y^{k} - P_\Omega F z^k}^2_2 > \epsilon^2  \\
+&\mbox{}\qquad \texttt{For }i = 1 \texttt{ to }n \\
+&\mbox{}\qquad\qquad \texttt{Solve } Cz^{k+1} = rhs^k \\
+&\mbox{}\qquad\qquad d^{k+1} = shrink(\nabla z^{k+1} + b^k, 1/\lambda) \\
+&\mbox{}\qquad\qquad b^{k+1} = b^k + \nabla z^{k+1} - d^{k+1} \\
+&\mbox{}\qquad \texttt{end} \\
+&\mbox{}\qquad y^{k+1} = y^{k} + y - P_\Omega F z^{k+1} \\
+&\texttt{end}
+\end{align*}
+
+Codes implementing the split Bregman is openly available on Goldstein's web page (\!\!\cite{goldsteinsplitcode}) and is also presented as \verb|sb_1d| and \verb|sb_2d| in our codes section.
+
+For more details see \cite{goldstein2009split} and reference therein.
+
+\section{Codes}\label{Codes}
+\subsection{1D Codes}
+\lstinputlisting{stable_n_robust_1d.m}
+\lstinputlisting{recovery_1d.m}
+\lstinputlisting{sb_1d.m}
+\lstinputlisting{grad_sparse.m}
+\lstinputlisting{cmpct_grad_sparse.m}
+\lstinputlisting{sample_m.m}
+\lstinputlisting{pn1d.m}
+\lstinputlisting{pn1dC.m}
+
+\subsection{2D Codes}
+\lstinputlisting{st_n_rob_2d.m}
+\lstinputlisting{recovery_2d.m}
+\lstinputlisting{sb_2d.m}
+\lstinputlisting{sample_m2d.m}
+\lstinputlisting{pn2d.m}
+\lstinputlisting{pn2dC.m}
+\end{appendices}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\bibliography{/home/kjc19/Desktop/master_ref1}
+%\bibliography{/home/kjc19/Desktop/master_ref}
+\bibliographystyle{plain}
+\end{document}  
