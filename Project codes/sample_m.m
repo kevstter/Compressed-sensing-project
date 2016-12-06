@@ -10,7 +10,7 @@ function[samples]=sample_m(m,N,prob)
 %
 % ex. 
 %   N=128;
-%   abab=sample_m(10,N,@(n) pn1d(n,N)); 
+%   abab=sample_m(10,N,@(n) pn1d(n,N,pn1dC(N))); 
 %   stem(-N/2+1:N/2, fftshift(abab)); axis('tight')
 %
 % Last modified Nov 2016, Kevin Chow
